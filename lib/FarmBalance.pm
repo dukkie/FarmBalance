@@ -1,6 +1,6 @@
 package FarmBalance;
 use Mouse;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 #- Input
 has 'farms' => (
@@ -20,7 +20,7 @@ has 'input' => (
 
 has 'debug' => (
 	is=>'rw', 
-	isa=>'Int', 
+	isa=>'Bool', 
 	default=>0
 );
 #- Output
@@ -55,12 +55,33 @@ sub input_fill_avg {
 	}
 }
 
+#- check parameters.
+sub check_param {
+	my $self = shift;
+	foreach my $bkey ( keys %{ $self->{stats} } ) {
+		if ( $#{$self->{stats}->{$bkey}} != ($self->{farms} - 1) ) {
+			print "Error: numbers of stats differ from farm number\n";
+			exit 1;
+		}
+	}
+	if ( defined $self->{input} ) {
+		my @input_array = keys %{$self->{input}};
+		my @bkey_array = keys %{$self->{stats}};
+		if ( $#input_array != $#bkey_array ) {
+			print "Error: numbers of input differ from stats blance key number\n";
+			exit 1;
+		}
+	}
+}
+
 #- Define Farm Number
 sub define_farm {
 	my $self = shift;
 	#- init, regarding bulk operation.
 	$self->{effective_farm} = undef;
 	$self->{effect_in_farm_max} = undef;
+	#- check stats and input parameters.
+	$self->check_param;
 	#- if traffic and data unknown, fill average values.
 	if ( ! defined $self->{input} ) {
 		$self->input_fill_avg;
@@ -71,7 +92,6 @@ sub define_farm {
 		my $farm_str = $farm + 1;
 		my $effect_in_farm = 0;
 		print "NODE: $farm_str\n" if ( $self->{debug} );
-		#- ノードごとに効果値を加算。
 		foreach my $b_key ( keys %{$self->{input}} ) {
 			#- standard deviation : before insert.
 			my ( $sd_before ) = sprintf("%.2f",$self->sd_percent($self->{stats}->{$b_key}));
@@ -123,6 +143,7 @@ sub rollback_stat {
 
 sub report {
 	my $self = shift;
+	$self->check_param;
 	my $stats = $self->{stats};
 	print "-----------------------------\n";
 	print "farm";
@@ -189,7 +210,6 @@ sub array_val_sum {
 	return $sum;
 }
 
-
 1;
 __END__
 
@@ -225,7 +245,7 @@ FarmBalance - make nice balance in Farming System regarding data, traffics, etc.
 
  
   #- when use in data migration.
-  use Data::Dumper;
+  use FarmBalance;
   my $farms = 4;
   my $src = 'migration.tsv'; #- like "uid100\t20\t22\t5..."
   my $stats = {	      #- give new system stats.
