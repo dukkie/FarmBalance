@@ -1,6 +1,6 @@
 package FarmBalance;
 use Mouse;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 #- Input
 has 'farms' => (
@@ -10,12 +10,12 @@ has 'farms' => (
 );
 has 'stats' => (
 	is=>'rw', 
-	isa=>'HashRef[ArrayRef[Int]]', 
+	isa=>'HashRef[ArrayRef[Num]]', 
 	required=>1,
 );
 has 'input' => (
 	is=>'rw', 
-	isa=>'HashRef[Int]'
+	isa=>'HashRef[Num]'
 );
 
 has 'debug' => (
@@ -58,20 +58,24 @@ sub input_fill_avg {
 #- check parameters.
 sub check_param {
 	my $self = shift;
+	if ( $self->{farms}  < 1 ) {
+		die "Error: farms must be larger than 0\n";
+	} elsif ( $self->{farms} > 10000000 ) {
+		die "Error: farms must be less than 10000000. Is it real system??\n";
+	}
 	foreach my $bkey ( keys %{ $self->{stats} } ) {
 		if ( $#{$self->{stats}->{$bkey}} != ($self->{farms} - 1) ) {
-			print "Error: numbers of stats differ from farm number\n";
-			exit 1;
+			die "Error: numbers of stats differ from farm number\n";
 		}
 	}
 	if ( defined $self->{input} ) {
 		my @input_array = keys %{$self->{input}};
 		my @bkey_array = keys %{$self->{stats}};
 		if ( $#input_array != $#bkey_array ) {
-			print "Error: numbers of input differ from stats blance key number\n";
-			exit 1;
+			die "Error: numbers of input differ from stats blance key number\n";
 		}
 	}
+	return 0;
 }
 
 #- Define Farm Number
@@ -201,6 +205,7 @@ sub average {
 	my $sum = $self->array_val_sum($arrayref);
 	return ( $sum / ( $#$arrayref + 1)  );
 }
+#- summarize array values 
 sub array_val_sum {
 	my ( $self, $arrayref)  = @_;
 	my $sum = 0;
@@ -294,9 +299,9 @@ And, chose most effective farm.
 
 =head1 AUTHOR
 
-DUKKIE(Masataka Koduka) E<lt>dukkiedukkie@yahoo.co.jpE<gt>
+DUKKIE(Masataka Koduka) E<lt>dukkie@cpan.orgE<gt>
 
-with helps from H.Fujimiya and Y.Kanda.
+with helps from H.Fujimiya, K.Moriyama and Y.Kanda.
 
 =head1 SEE ALSO
 
